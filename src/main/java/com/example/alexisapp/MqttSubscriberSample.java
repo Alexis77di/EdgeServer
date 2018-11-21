@@ -7,33 +7,39 @@ import java.util.Date;
 
 
 public class MqttSubscriberSample implements MqttCallback {
-    public static void main(String[] args) {
+
+    public static void main(String[] args) throws InterruptedException {
         String topic = "MQTT Examples";
         int qos = 2;
         String broker = "tcp://localhost:1883";
         String clientId = "JavaSampleSubscriber";
         MemoryPersistence persistence = new MemoryPersistence();
+
+
         try {
             //Connect client to MQTT Broker
-            MqttClient sampleClient = new MqttClient(broker, clientId, persistence);
+            MqttAsyncClient sampleClient = new MqttAsyncClient(broker, clientId, persistence);
             MqttConnectOptions connOpts = new MqttConnectOptions();
             connOpts.setCleanSession(true);
             //Set callback
-            MqttSubscriberSample main = new MqttSubscriberSample();
-            sampleClient.setCallback(main);
 
+            sampleClient.setCallback(new MqttSubscriberSample());
             System.out.println("Connecting to broker:" + broker);
+
             sampleClient.connect(connOpts);
             System.out.println("Connected");
 
-            System.out.println("Subscribing to topic \"" + topic + "\" qos " + qos);
+            Thread.sleep(1000);
             sampleClient.subscribe(topic, qos);
+            System.out.println("Subscribed");
+
         } catch (MqttException me) {
             System.out.println("reason " + me.getReasonCode());
             System.out.println("msg " + me.getMessage());
             System.out.println("loc " + me.getLocalizedMessage());
             System.out.println("cause " + me.getCause());
             System.out.println("excep " + me);
+            me.printStackTrace();
             me.printStackTrace();
         }
     }
