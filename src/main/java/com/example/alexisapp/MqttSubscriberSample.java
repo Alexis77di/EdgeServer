@@ -14,7 +14,7 @@ public class MqttSubscriberSample implements MqttCallback {
         String broker = "tcp://localhost:1883";
         String clientId = "JavaSampleSubscriber";
         MemoryPersistence persistence = new MemoryPersistence();
-
+//
 
         try {
             //Connect client to MQTT Broker
