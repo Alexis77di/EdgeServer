@@ -56,6 +56,6 @@ public class MqttSubscriberSample implements MqttCallback {
 
     public void messageArrived(String topic, MqttMessage message) {
         String time = new Date().toString();
-        System.out.println("Time:\t" + time + "Topic\t" + topic + "Message:\t" + new String(message.getPayload()) + " Qos:\t" + message.getQos());
+        System.out.println("Time:\t" + time + " Topic\t" + topic);
     }
 }
