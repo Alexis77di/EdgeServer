@@ -13,10 +13,10 @@ public class MqttSubscriber implements MqttCallback {
         String topic = "#";
         int qos = 2;
         String broker = "tcp://localhost:1883";
-        String clientId = "Μyclientid2";
+        String clientId1 = "Μyclientid2";
         MemoryPersistence persistence = new MemoryPersistence();
         try {
-            MqttAsyncClient sampleClient = new MqttAsyncClient(broker, clientId, persistence);
+            MqttAsyncClient sampleClient = new MqttAsyncClient(broker, clientId1, persistence);
             MqttConnectOptions connOpts = new MqttConnectOptions();
             connOpts.setCleanSession(true);
             sampleClient.setCallback(new MqttSubscriber());
@@ -44,6 +44,7 @@ public class MqttSubscriber implements MqttCallback {
         System.exit(1);
     }
 
+
     public void deliveryComplete(IMqttDeliveryToken token) {
 
     }
@@ -51,9 +52,9 @@ public class MqttSubscriber implements MqttCallback {
     public void messageArrived(String topic, MqttMessage message) {
         System.out.println("topic: " + topic);
         System.out.println("message: " + new String(message.getPayload()));
-//        ManagerThread mng_thread = new ManagerThread(topic);
-//        Thread tmp_thread = new Thread(mng_thread);
-//        tmp_thread.start();
+        ManagerThread mng_thread = new ManagerThread(topic);
+        Thread tmp_thread = new Thread(mng_thread);
+        tmp_thread.start();
     }
 
     private class ManagerThread implements Runnable {
@@ -69,16 +70,20 @@ public class MqttSubscriber implements MqttCallback {
 
         @Override
         public void run() {
-//            int cntr = arr.length;
-//            if(cntr == 4){
-//                String macAddress = arr[0];
-//                String sensor_Value = arr[1];
-//                String latitude = arr[2];
-//                String longtitude = arr[3];
-//            }
-            publisher = new MqttPublisher();
-            String macAddress = "alexey shved";
-            publisher.main(macAddress, "Hello from the other side!");
+            int cntr = arr.length;
+            if (cntr == 4) {
+                String macAddress = arr[0];
+                String sensor_Value = arr[1];
+                String latitude = arr[2];
+                String longtitude = arr[3];
+
+
+                String[] accelero_values = sensor_Value.split(",");
+                publisher = new MqttPublisher();
+                publisher.main(macAddress, "Hello from the other side!");
+
+            }
+
         }
     }
 }
