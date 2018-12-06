@@ -80,7 +80,7 @@ public class MqttSubscriber implements MqttCallback {
 
                 String[] accelero_values = sensor_Value.split(",");
                 publisher = new MqttPublisher();
-                publisher.main(macAddress, "Hello from the other side!");
+                publisher.main(macAddress, "alarm");
 
             }
 
