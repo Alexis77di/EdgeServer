@@ -3,12 +3,9 @@ package com.example.alexisapp;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
-import java.util.Random;
-
 public class MqttSubscriber implements MqttCallback {
 
     private static MqttPublisher publisher;
-    Random rand = new Random();
 
     //String macAddress;
     public static void main(String[] args) {
@@ -85,9 +82,10 @@ public class MqttSubscriber implements MqttCallback {
                 publisher = new MqttPublisher();
                 publisher.main(macAddress, "alarm");
 
-
             }
 
         }
+
     }
 }
+
