@@ -3,9 +3,12 @@ package com.example.alexisapp;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
+import java.util.Random;
+
 public class MqttSubscriber implements MqttCallback {
 
     private static MqttPublisher publisher;
+    Random rand = new Random();
 
     //String macAddress;
     public static void main(String[] args) {
@@ -52,7 +55,7 @@ public class MqttSubscriber implements MqttCallback {
     public void messageArrived(String topic, MqttMessage message) {
         System.out.println("topic: " + topic);
         System.out.println("message: " + new String(message.getPayload()));
-        ManagerThread mng_thread = new ManagerThread(topic);
+        ManagerThread mng_thread = new ManagerThread(new String(message.getPayload()));
         Thread tmp_thread = new Thread(mng_thread);
         tmp_thread.start();
     }
@@ -81,6 +84,7 @@ public class MqttSubscriber implements MqttCallback {
                 String[] accelero_values = sensor_Value.split(",");
                 publisher = new MqttPublisher();
                 publisher.main(macAddress, "alarm");
+
 
             }
 
