@@ -3,11 +3,10 @@ package com.example.alexisapp;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
+import java.util.Random;
+
 public class MqttSubscriber implements MqttCallback {
 
-    private static MqttPublisher publisher;
-
-    //String macAddress;
     public static void main(String[] args) {
 
         String topic = "#";
@@ -60,32 +59,35 @@ public class MqttSubscriber implements MqttCallback {
     private class ManagerThread implements Runnable {
 
         String[] arr;
+        Random r;
 
-        public ManagerThread(String topic) {
-
+        ManagerThread(String topic) {
             arr = topic.split("/");
-
-
+            r = new Random();
         }
 
         @Override
         public void run() {
-            int cntr = arr.length;
-            if (cntr == 4) {
-                String macAddress = arr[0];
-                String sensor_Value = arr[1];
-                String latitude = arr[2];
-                String longtitude = arr[3];
+            if (arr.length == 4) {
+                String mac = arr[0];
+                String accelero = arr[1];
+                String location = arr[2];
+                String csv = arr[3];
 
-
-                String[] accelero_values = sensor_Value.split(",");
-                publisher = new MqttPublisher();
-                publisher.main(macAddress, "alarm");
-
+                if (danger(accelero, location, csv)) {
+                    MqttPublisher publisher = new MqttPublisher(mac);
+                    try {
+                        publisher.alarm();
+                    } catch (MqttException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
-
         }
 
+        boolean danger(String accelero, String location, String csv) {
+            return r.nextBoolean();
+        }
     }
 }
 
