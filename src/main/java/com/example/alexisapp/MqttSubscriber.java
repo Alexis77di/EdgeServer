@@ -8,7 +8,7 @@ import java.util.Random;
 public class MqttSubscriber implements MqttCallback {
 
     public static void main(String[] args) {
-
+        WebSocketClient.receive("127.0.0.1", 15123);
         String topic = "#";
         int qos = 2;
         String broker = "tcp://localhost:1883";
