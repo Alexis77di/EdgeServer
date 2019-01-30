@@ -1,14 +1,50 @@
 package com.example.alexisapp;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.eclipse.paho.client.mqttv3.*;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
-import java.util.Random;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.*;
 
 public class MqttSubscriber implements MqttCallback {
 
+    static boolean kNN(List<Record> train, List<Double> record) {
+        train.sort(Comparator.comparingDouble(value -> value.EuclideanDistance(record)));
+        for (Record r : train) {
+            System.out.println(r.EuclideanDistance(record));
+        }
+        return true;
+    }
+
     public static void main(String[] args) {
         WebSocketClient.receive("127.0.0.1", 15123);
+        Reader in = null;
+        List<Record> data = new ArrayList<>();
+        try {
+            in = new FileReader("copy.csv");
+            CSVParser records = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(in);
+            for (CSVRecord record : records) {
+                List<Double> d = new ArrayList<>();
+                Iterator<String> iterator = record.iterator();
+                boolean b = iterator.next().contains("EyesClosed");
+                while (iterator.hasNext()) {
+                    String s = iterator.next();
+                    d.add(Double.parseDouble(s));
+                }
+                Record r = new Record();
+                r.EyesClosed = b;
+                r.Vector = d;
+                data.add(r);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        kNN(data, new ArrayList<>(data.get(0).Vector));
         String topic = "#";
         int qos = 2;
         String broker = "tcp://localhost:1883";
@@ -92,5 +128,8 @@ public class MqttSubscriber implements MqttCallback {
             return r.nextBoolean();
         }
     }
+
+
 }
+
 
