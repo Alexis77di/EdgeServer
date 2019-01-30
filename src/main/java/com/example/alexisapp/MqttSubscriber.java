@@ -15,7 +15,7 @@ public class MqttSubscriber implements MqttCallback {
         String clientId1 = "Μyclientid2";
         MemoryPersistence persistence = new MemoryPersistence();
         try {
-            MqttAsyncClient sampleClient = new MqttAsyncClient(broker, clientId1, persistence);
+            MqttClient sampleClient = new MqttClient(broker, clientId1, persistence);
             MqttConnectOptions connOpts = new MqttConnectOptions();
             connOpts.setCleanSession(true);
             sampleClient.setCallback(new MqttSubscriber());
@@ -77,7 +77,10 @@ public class MqttSubscriber implements MqttCallback {
                 if (danger(accelero, location, csv)) {
                     MqttPublisher publisher = new MqttPublisher(mac);
                     try {
-                        publisher.alarm();
+                        if (r.nextBoolean()) {
+                            publisher.alarm();
+                        } else
+                            publisher.flash();
                     } catch (MqttException e) {
                         e.printStackTrace();
                     }
