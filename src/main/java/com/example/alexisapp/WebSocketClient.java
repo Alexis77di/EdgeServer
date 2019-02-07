@@ -1,9 +1,7 @@
 package com.example.alexisapp;
 
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.net.ServerSocket;
 import java.net.Socket;
 
 class WebSocketClient {
@@ -24,5 +22,24 @@ class WebSocketClient {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+
+    public static int danger(String mac, String accelero, String location, boolean eyesClosed, int port, String host) throws IOException {
+        ServerSocket serverSocket = new ServerSocket(port);
+        Socket socket = serverSocket.accept();
+        System.out.println("Accepted connection : " + socket);
+        byte[] bytearray = String.format("%s/%s/%s/%d", mac, accelero, location, eyesClosed ? 1 : 0).getBytes();
+        OutputStream os = socket.getOutputStream();
+        System.out.println("Sending Files...");
+        os.write(bytearray);
+        os.flush();
+        socket.close();
+        System.out.println("File transfer complete");
+        socket = new Socket(host, port);
+        InputStream is = socket.getInputStream();
+        int status = is.read();
+        socket.close();
+        return status;
     }
 }

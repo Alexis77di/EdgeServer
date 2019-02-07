@@ -1,5 +1,6 @@
 package com.example.alexisapp;
 
+import featureSelectionMetricsPackage.Entropy;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -9,9 +10,16 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.*;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
 
 public class MqttSubscriber implements MqttCallback {
+
+    final static String backhaulIp = "127.0.0.1";
+    private final List<Record> data;
 
     static boolean kNN(List<Record> train, List<Double> record, int k) {
         int closed = 0;
@@ -33,8 +41,12 @@ public class MqttSubscriber implements MqttCallback {
         return closed * wClosed > opened * wOpened;
     }
 
+    public MqttSubscriber(List<Record> d) {
+        data = d;
+    }
+
     public static void main(String[] args) {
-        WebSocketClient.receive("127.0.0.1", 15123);
+        WebSocketClient.receive(backhaulIp, 15123);
         Reader in = null;
         List<Record> data = new ArrayList<>();
         try {
@@ -69,7 +81,7 @@ public class MqttSubscriber implements MqttCallback {
             MqttClient sampleClient = new MqttClient(broker, clientId1, persistence);
             MqttConnectOptions connOpts = new MqttConnectOptions();
             connOpts.setCleanSession(true);
-            sampleClient.setCallback(new MqttSubscriber());
+            sampleClient.setCallback(new MqttSubscriber(data));
             System.out.println("Connecting to broker: " + broker);
             sampleClient.connect(connOpts);
             System.out.println("Connected");
@@ -102,7 +114,7 @@ public class MqttSubscriber implements MqttCallback {
     public void messageArrived(String topic, MqttMessage message) {
         System.out.println("topic: " + topic);
         System.out.println("message: " + new String(message.getPayload()));
-        ManagerThread mng_thread = new ManagerThread(new String(message.getPayload()));
+        ManagerThread mng_thread = new ManagerThread(new String(message.getPayload()), data);
         Thread tmp_thread = new Thread(mng_thread);
         tmp_thread.start();
     }
@@ -110,11 +122,11 @@ public class MqttSubscriber implements MqttCallback {
     private class ManagerThread implements Runnable {
 
         String[] arr;
-        Random r;
+        List<Record> data;
 
-        ManagerThread(String topic) {
+        ManagerThread(String topic, List<Record> d) {
             arr = topic.split("/");
-            r = new Random();
+            data = d;
         }
 
         @Override
@@ -124,14 +136,28 @@ public class MqttSubscriber implements MqttCallback {
                 String accelero = arr[1];
                 String location = arr[2];
                 String csv = arr[3];
-
-                if (danger(accelero, location, csv)) {
+                int status = 0;
+                try {
+                    status = WebSocketClient.danger(mac, accelero, location, EyesClosed(csv), 15123, backhaulIp);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                if (status == 1) {
                     MqttPublisher publisher = new MqttPublisher(mac);
                     try {
-                        if (r.nextBoolean()) {
-                            publisher.alarm();
-                        } else
-                            publisher.flash();
+
+                        publisher.alarm();
+
+                    } catch (MqttException e) {
+                        e.printStackTrace();
+                    }
+
+                } else if (status == 2) {
+                    MqttPublisher publisher = new MqttPublisher(mac);
+
+                    try {
+                        publisher.flash();
+
                     } catch (MqttException e) {
                         e.printStackTrace();
                     }
@@ -139,9 +165,12 @@ public class MqttSubscriber implements MqttCallback {
             }
         }
 
-        boolean danger(String accelero, String location, String csv) {
-            return r.nextBoolean();
+        boolean EyesClosed(String csv) {
+            Reader in = new StringReader(csv);
+            return kNN(data, Entropy.calculate(in), 3);
         }
+
+
     }
 
 
