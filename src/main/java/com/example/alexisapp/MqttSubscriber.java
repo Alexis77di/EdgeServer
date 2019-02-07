@@ -13,12 +13,24 @@ import java.util.*;
 
 public class MqttSubscriber implements MqttCallback {
 
-    static boolean kNN(List<Record> train, List<Double> record) {
+    static boolean kNN(List<Record> train, List<Double> record, int k) {
+        int closed = 0;
+        int opened = 0;
+        double wClosed = 0;
+        double wOpened = 0;
         train.sort(Comparator.comparingDouble(value -> value.EuclideanDistance(record)));
-        for (Record r : train) {
-            System.out.println(r.EuclideanDistance(record));
+        for (int i = 0; i < k; i++) {
+            Record r = train.get(i);
+            if (r.EyesClosed) {
+                closed++;
+                wClosed += 1 / r.EuclideanDistance(record);
+            } else {
+                opened++;
+                wOpened += 1 / r.EuclideanDistance(record);
+
+            }
         }
-        return true;
+        return closed * wClosed > opened * wOpened;
     }
 
     public static void main(String[] args) {
@@ -44,7 +56,10 @@ public class MqttSubscriber implements MqttCallback {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        kNN(data, new ArrayList<>(data.get(0).Vector));
+        for (Record r : data) {
+            System.out.println(r.EyesClosed + " " + kNN(new ArrayList<>(data), (r.Vector), 3));
+        }
+
         String topic = "#";
         int qos = 2;
         String broker = "tcp://localhost:1883";

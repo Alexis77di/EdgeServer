@@ -11,7 +11,8 @@ public class Record {
         Iterator<Double> iterator = b.iterator();
         double result = 0;
         for (Double d : Vector) {
-            result += d * iterator.next();
+            double i = iterator.next();
+            result += (d - i) * (d - i);
         }
         return result;
     }
