@@ -151,11 +151,12 @@ public class MqttSubscriber implements MqttCallback {
 
         @Override
         public void run() {
-            if (arr.length == 4) {
+            if (arr.length == 6) {
                 String mac = arr[0];
                 String accelero = arr[1];
                 String location = arr[2];
                 String csv = arr[3];
+                String file = arr[5];
                 try {
 
                     //status = WebSocketClient.danger(mac, accelero, location, EyesClosed(csv), 2469, backhaulIp);
@@ -169,8 +170,14 @@ public class MqttSubscriber implements MqttCallback {
                     }
                     if (EyesClosed(csv)) {
                         i.count++;
+                        if (file.contains("Opened")) {
+                            System.err.println("Eyes predicted closed but were open");
+                        }
                     } else {
                         i.count = 0;
+                        if (file.contains("Closed")) {
+                            System.err.println("Eyes predicted opened but were close");
+                        }
                     }
                     i.location = location;
                     System.out.println("info: " + location + " " + i.count);
