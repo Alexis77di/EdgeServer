@@ -35,8 +35,9 @@ class WebSocketClient {
         os.write(bytearray);
         os.flush();
         socket.close();
+        serverSocket.close();
         System.out.println("File transfer complete");
-        socket = new Socket(host, port);
+        socket = new Socket(host, port + 1);
         InputStream is = socket.getInputStream();
         int status = is.read();
         socket.close();

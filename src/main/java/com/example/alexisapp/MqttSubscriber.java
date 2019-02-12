@@ -11,15 +11,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 public class MqttSubscriber implements MqttCallback {
 
     final static String backhaulIp = "127.0.0.1";
     private final List<Record> data;
+    private final Map<String, Info> info;
 
     static boolean kNN(List<Record> train, List<Double> record, int k) {
         int closed = 0;
@@ -43,6 +41,7 @@ public class MqttSubscriber implements MqttCallback {
 
     public MqttSubscriber(List<Record> d) {
         data = d;
+        info = new HashMap<>();
     }
 
     public static void main(String[] args) {
@@ -67,9 +66,6 @@ public class MqttSubscriber implements MqttCallback {
             }
         } catch (IOException e) {
             e.printStackTrace();
-        }
-        for (Record r : data) {
-            System.out.println(r.EyesClosed + " " + kNN(new ArrayList<>(data), (r.Vector), 3));
         }
 
         String topic = "#";
@@ -111,21 +107,45 @@ public class MqttSubscriber implements MqttCallback {
 
     }
 
+    public static double distance(String l1, String l2) {
+        double lat1 = Double.parseDouble(l1.split(",")[0]);
+        double lat2 = Double.parseDouble(l2.split(",")[0]);
+        double lon1 = Double.parseDouble(l1.split(",")[1]);
+        double lon2 = Double.parseDouble(l2.split(",")[1]);
+        final int R = 6371; // Radius of the earth
+
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c * 1000;
+
+    }
+
     public void messageArrived(String topic, MqttMessage message) {
         System.out.println("topic: " + topic);
-        System.out.println("message: " + new String(message.getPayload()));
-        ManagerThread mng_thread = new ManagerThread(new String(message.getPayload()), data);
+        ManagerThread mng_thread = new ManagerThread(new String(message.getPayload()), data, info);
         Thread tmp_thread = new Thread(mng_thread);
         tmp_thread.start();
+    }
+
+    class Info {
+        String location;
+        int count;
     }
 
     private class ManagerThread implements Runnable {
 
         String[] arr;
         List<Record> data;
+        Map<String, Info> info;
 
-        ManagerThread(String topic, List<Record> d) {
+
+        ManagerThread(String topic, List<Record> d, Map<String, Info> i) {
             arr = topic.split("/");
+            info = i;
             data = d;
         }
 
@@ -136,32 +156,59 @@ public class MqttSubscriber implements MqttCallback {
                 String accelero = arr[1];
                 String location = arr[2];
                 String csv = arr[3];
-                int status = 0;
                 try {
-                    status = WebSocketClient.danger(mac, accelero, location, EyesClosed(csv), 15123, backhaulIp);
-                } catch (IOException e) {
+
+                    //status = WebSocketClient.danger(mac, accelero, location, EyesClosed(csv), 2469, backhaulIp);
+                    Info i;
+                    if (info.containsKey(mac)) {
+                        i = info.get(mac);
+                    } else {
+                        System.out.println("New mac: " + mac);
+                        i = new Info();
+                        info.put(mac, i);
+                    }
+                    if (EyesClosed(csv)) {
+                        i.count++;
+                    } else {
+                        i.count = 0;
+                    }
+                    i.location = location;
+                    System.out.println("info: " + location + " " + i.count);
+
+                    if (i.count >= 3) {
+                        MqttPublisher publisher = new MqttPublisher(mac);
+                        try {
+
+                            publisher.alarm();
+
+                        } catch (MqttException e) {
+                            e.printStackTrace();
+                        }
+                        System.out.println("alarm: " + mac);
+
+                        for (Map.Entry<String, Info> entry : info.entrySet()) {
+                            if (mac.equals(entry.getKey())) {
+                                continue;
+                            }
+                            System.out.println("danger: " + entry.getKey());
+                            String mac1 = entry.getKey();
+                            Info info1 = entry.getValue();
+                            if (distance(info1.location, location) < 500) {
+                                publisher = new MqttPublisher(mac1);
+
+                                try {
+                                    publisher.flash();
+
+                                } catch (MqttException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
-                if (status == 1) {
-                    MqttPublisher publisher = new MqttPublisher(mac);
-                    try {
 
-                        publisher.alarm();
-
-                    } catch (MqttException e) {
-                        e.printStackTrace();
-                    }
-
-                } else if (status == 2) {
-                    MqttPublisher publisher = new MqttPublisher(mac);
-
-                    try {
-                        publisher.flash();
-
-                    } catch (MqttException e) {
-                        e.printStackTrace();
-                    }
-                }
             }
         }
 
@@ -172,7 +219,6 @@ public class MqttSubscriber implements MqttCallback {
 
 
     }
-
 
 }
 

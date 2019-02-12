@@ -48,7 +48,7 @@ class MqttPublisher {
         System.out.println("Connecting to broker: " + broker);
         sampleClient.connect(connOpts);
         System.out.println("Connected");
-        System.out.println("Publishing alarm");
+        System.out.println("Publishing flash");
         MqttMessage message = new MqttMessage("flash".getBytes());
         message.setQos(qos);
         sampleClient.publish(topic, message);
