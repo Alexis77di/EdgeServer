@@ -202,10 +202,10 @@ public class MqttSubscriber implements MqttCallback {
                             String mac1 = entry.getKey();
                             Info info1 = entry.getValue();
                             if (distance(info1.location, location) < 500) {
-                                publisher = new MqttPublisher(mac1);
+                                MqttPublisher publisher2 = new MqttPublisher(mac1);
 
                                 try {
-                                    publisher.flash();
+                                    publisher2.flash();
 
                                 } catch (MqttException e) {
                                     e.printStackTrace();
