@@ -19,6 +19,7 @@ public class MqttSubscriber implements MqttCallback {
     private final List<Record> data;
     private final Map<String, Info> info;
 
+
     static boolean kNN(List<Record> train, List<Double> record, int k) {
         int closed = 0;
         int opened = 0;
